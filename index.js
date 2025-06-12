@@ -209,12 +209,19 @@ app.get('/v1/stories/:id', authenticateToken, (req, res) => {
 });
 
 // AMBIL RIWAYAT CERITA USER
+// Pastikan menyertakan nama user di data history
 app.get('/v1/history', authenticateToken, (req, res) => {
-  const userStories = stories.filter((s) => s.name === req.user.name);
+  // Gunakan user ID bukan name
+  const userStories = stories.filter(s => s.userId === req.user.userId);
+  
   res.json({
     error: false,
     message: 'User story history fetched successfully',
-    history: userStories,
+    history: userStories.map(story => ({
+      ...story,
+      name: req.user.name, // Sertakan nama
+      email: req.user.email // Sertakan email untuk sinkronisasi
+    }))
   });
 });
 
