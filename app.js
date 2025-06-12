@@ -12,7 +12,7 @@ const SECRET_KEY = 'segarikan-secret-key';
 // Setup CORS
 const allowedOrigins = [
   'http://localhost:9000',
-  'https://segarikan-production.up.railway.app',
+  'https://segarikan.vercel.app',
 ];
 app.use(
   cors({
