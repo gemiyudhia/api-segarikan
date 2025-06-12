@@ -136,28 +136,36 @@ app.post(
   '/v1/stories',
   authenticateToken,
   upload.single('photo'),
-  (req, res) => {
-    const { description, lat, lon } = req.body;
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ error: true, message: 'Photo upload required' });
-    }
+  async (req, res) => {
+    try {
+      const { result, createdAt } = req.body;
+      const user = req.user;
 
-    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${
-      req.file.filename
-    }`;
-    const story = {
-      id: 'story-' + Date.now(),
-      name: req.user.name,
-      description: description || '',
-      photoUrl,
-      createdAt: new Date(),
-      lat: lat ? parseFloat(lat) : null,
-      lon: lon ? parseFloat(lon) : null,
-    };
-    stories.push(story);
-    res.json({ error: false, message: 'Story added successfully', story });
+      // Simpan ke database
+      const newStory = {
+        userId: user.userId,
+        name: user.name,
+        email: user.email,
+        photoUrl: req.file ? `/uploads/${req.file.filename}` : null,
+        result: JSON.parse(result), // Parse JSON string
+        createdAt: createdAt || new Date().toISOString(),
+        savedAt: new Date().toISOString(),
+      };
+
+      // Simpan ke database (contoh: array in-memory)
+      stories.push(newStory);
+
+      res.status(201).json({
+        error: false,
+        message: 'Story saved successfully',
+        story: newStory,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: true,
+        message: 'Failed to save story',
+      });
+    }
   }
 );
 
@@ -212,16 +220,16 @@ app.get('/v1/stories/:id', authenticateToken, (req, res) => {
 // Pastikan menyertakan nama user di data history
 app.get('/v1/history', authenticateToken, (req, res) => {
   // Gunakan user ID bukan name
-  const userStories = stories.filter(s => s.userId === req.user.userId);
-  
+  const userStories = stories.filter((s) => s.userId === req.user.userId);
+
   res.json({
     error: false,
     message: 'User story history fetched successfully',
-    history: userStories.map(story => ({
+    history: userStories.map((story) => ({
       ...story,
       name: req.user.name, // Sertakan nama
-      email: req.user.email // Sertakan email untuk sinkronisasi
-    }))
+      email: req.user.email, // Sertakan email untuk sinkronisasi
+    })),
   });
 });
 
